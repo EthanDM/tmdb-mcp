@@ -4,7 +4,9 @@ import type { TmdbClient } from "../src/lib/tmdb.js";
 import {
   createToolHandlers,
   discoverMoviesSchema,
-  searchMoviesSchema
+  discoverTvSchema,
+  searchMoviesSchema,
+  searchTvSchema
 } from "../src/tools.js";
 
 describe("tool schemas", () => {
@@ -31,6 +33,20 @@ describe("tool schemas", () => {
         "maxRuntime"
       ]);
     }
+  });
+
+  it("applies TV search defaults and rejects inverted air-date ranges", () => {
+    expect(searchTvSchema.parse({ query: "Severance" })).toMatchObject({
+      query: "Severance",
+      page: 1,
+      includeAdult: false
+    });
+
+    const result = discoverTvSchema.safeParse({
+      firstAirDateFrom: "2025-01-01",
+      firstAirDateTo: "2024-01-01"
+    });
+    expect(result.success).toBe(false);
   });
 
   it("returns MCP-compatible errors without invoking the client", async () => {

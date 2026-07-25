@@ -60,8 +60,55 @@ async function main(): Promise<void> {
   assertNonempty(discovered.items, "Discover");
   assertNonempty(related.items, "Related");
 
+  logStep("search TV series");
+  const tvSearch = await client.searchTv({
+    query: process.env.TMDB_SMOKE_TV_QUERY?.trim() || "Severance",
+    page: 1,
+    includeAdult: false
+  });
+  const tvSeed = tvSearch.items[0];
+  if (!tvSeed) throw new Error("TV search returned no seed series.");
+
+  logStep(`get TV series ${tvSeed.id}`);
+  const tvDetails = await client.getTvSeries({ seriesId: tvSeed.id });
+  if (tvDetails.id !== tvSeed.id) {
+    throw new Error("Exact TV series lookup mismatch.");
+  }
+
+  logStep("TV lists, genres, and providers");
+  const [popularTv, topRatedTv, trendingTv, tvGenres, tvProviders] =
+    await Promise.all([
+      client.listTvSeries({ category: "popular", page: 1 }),
+      client.listTvSeries({ category: "top_rated", page: 1 }),
+      client.trendingTv({ timeWindow: "week" }),
+      client.listTvGenres(),
+      client.listTvWatchProviders({})
+    ]);
+  assertNonempty(popularTv.items, "Popular TV");
+  assertNonempty(topRatedTv.items, "Top-rated TV");
+  assertNonempty(trendingTv.items, "Trending TV");
+  assertNonempty(tvGenres.genres, "TV genres");
+  assertNonempty(tvProviders.providers, "TV providers");
+
+  logStep("discover and related TV series");
+  const [discoveredTv, relatedTv] = await Promise.all([
+    client.discoverTv({
+      genres: [tvGenres.genres[0]!.id],
+      minRating: 7,
+      sortBy: "vote_average.desc",
+      page: 1
+    }),
+    client.getRelatedTv({
+      seriesId: tvSeed.id,
+      kind: "recommendations",
+      page: 1
+    })
+  ]);
+  assertNonempty(discoveredTv.items, "Discover TV");
+  assertNonempty(relatedTv.items, "Related TV");
+
   console.log(
-    `Smoke passed: ${details.title}; ${popular.total_results} popular; ${related.total_results} recommendations.`
+    `Smoke passed: movie ${details.title}; TV ${tvDetails.name}; ${popular.total_results} popular movies; ${popularTv.total_results} popular TV series.`
   );
 }
 

@@ -1,13 +1,23 @@
 import type { TmdbConfig } from "../config.js";
 import type {
+  DiscoverTvInput,
   DiscoverMoviesInput,
   Genre,
   MovieDetails,
   MovieListCategory,
   MoviePage,
   ProviderCatalogItem,
-  RelatedMovieKind
+  RelatedMovieKind,
+  TvListCategory,
+  TvSeriesDetails,
+  TvSeriesPage
 } from "../types.js";
+import {
+  normalizeTvDetails,
+  normalizeTvPage,
+  type TmdbTvDetails,
+  type TmdbTvPage
+} from "./tmdb-tv-normalizers.js";
 import {
   normalizeMovieDetails,
   normalizeMoviePage,
@@ -19,6 +29,7 @@ import {
 import { TmdbRequestClient, type FetchLike } from "./tmdb-request-client.js";
 
 const APPENDED_MOVIE_DATA = "credits,videos";
+const APPENDED_TV_DATA = "aggregate_credits,videos";
 
 /**
  * Thin read-only TMDB client that returns normalized discovery-oriented results.
@@ -204,9 +215,201 @@ export class TmdbClient {
     region?: string;
     language?: string;
   }): Promise<{ region: string; providers: ProviderCatalogItem[] }> {
+    return this.listProviderCatalog("/watch/providers/movie", input);
+  }
+
+  /**
+   * Searches TV series by original, translated, and alternative names.
+   */
+  async searchTv(input: {
+    query: string;
+    firstAirYear?: number;
+    page: number;
+    language?: string;
+    includeAdult: boolean;
+  }): Promise<TvSeriesPage> {
+    const query = baseQuery(input.page, input.language || this.config.language);
+    query.set("query", input.query);
+    query.set("include_adult", String(input.includeAdult));
+    if (input.firstAirYear) {
+      query.set("first_air_date_year", String(input.firstAirYear));
+    }
+
+    return this.readTvPage("/search/tv", query);
+  }
+
+  /**
+   * Returns series details plus creators, aggregate cast, trailer, and providers.
+   */
+  async getTvSeries(input: {
+    seriesId: number;
+    language?: string;
+    region?: string;
+  }): Promise<TvSeriesDetails> {
+    const language = input.language || this.config.language;
+    const region = input.region || this.config.region;
+    const detailsQuery = new URLSearchParams({
+      language,
+      append_to_response: APPENDED_TV_DATA
+    });
+    const [series, providers, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbTvDetails>(
+        `/tv/${encodeURIComponent(input.seriesId)}`,
+        detailsQuery
+      ),
+      this.requests.get<TmdbWatchProviderResponse>(
+        `/tv/${encodeURIComponent(input.seriesId)}/watch/providers`
+      ),
+      this.getImageBaseUrl()
+    ]);
+
+    return normalizeTvDetails(series, providers, region, imageBaseUrl);
+  }
+
+  /**
+   * Reads airing-today, on-the-air, popular, or top-rated TV series.
+   */
+  async listTvSeries(input: {
+    category: TvListCategory;
+    page: number;
+    language?: string;
+  }): Promise<TvSeriesPage> {
+    return this.readTvPage(
+      `/tv/${input.category}`,
+      baseQuery(input.page, input.language || this.config.language)
+    );
+  }
+
+  /**
+   * Returns TV series trending over the current day or week.
+   */
+  async trendingTv(input: {
+    timeWindow: "day" | "week";
+    language?: string;
+  }): Promise<TvSeriesPage> {
+    return this.readTvPage(
+      `/trending/tv/${input.timeWindow}`,
+      new URLSearchParams({
+        language: input.language || this.config.language
+      })
+    );
+  }
+
+  /**
+   * Applies the supported TV discovery filters without exposing raw query syntax.
+   *
+   * Rating sorts default to 200 votes so tiny samples do not dominate results.
+   */
+  async discoverTv(input: DiscoverTvInput): Promise<TvSeriesPage> {
+    const language = input.language || this.config.language;
+    const region = input.region || this.config.region;
+    const query = baseQuery(input.page, language);
+    query.set("include_adult", "false");
+    query.set("include_null_first_air_dates", "false");
+    query.set("sort_by", input.sortBy || "popularity.desc");
+
+    setOptional(query, "first_air_date_year", input.firstAirYear);
+    setOptional(query, "first_air_date.gte", input.firstAirDateFrom);
+    setOptional(query, "first_air_date.lte", input.firstAirDateTo);
+    setOptional(query, "vote_average.gte", input.minRating);
+    setOptional(
+      query,
+      "vote_count.gte",
+      input.minVoteCount ??
+        (input.sortBy === "vote_average.desc" ? 200 : undefined)
+    );
+    setOptional(query, "with_runtime.gte", input.minRuntime);
+    setOptional(query, "with_runtime.lte", input.maxRuntime);
+    setOptional(query, "with_original_language", input.originalLanguage);
+
+    if (input.genres?.length) {
+      query.set(
+        "with_genres",
+        input.genres.join(input.genreMode === "or" ? "|" : ",")
+      );
+    }
+    if (input.excludeGenres?.length) {
+      query.set("without_genres", input.excludeGenres.join(","));
+    }
+    if (input.watchProviderIds?.length) {
+      query.set("watch_region", region);
+      query.set("with_watch_providers", input.watchProviderIds.join("|"));
+    }
+    if (input.watchMonetizationTypes?.length) {
+      query.set("watch_region", region);
+      query.set(
+        "with_watch_monetization_types",
+        input.watchMonetizationTypes.join("|")
+      );
+    }
+
+    return this.readTvPage("/discover/tv", query);
+  }
+
+  /**
+   * Returns TV recommendations or narrower similar-series matches.
+   */
+  async getRelatedTv(input: {
+    seriesId: number;
+    kind: RelatedMovieKind;
+    page: number;
+    language?: string;
+  }): Promise<TvSeriesPage> {
+    return this.readTvPage(
+      `/tv/${encodeURIComponent(input.seriesId)}/${input.kind}`,
+      baseQuery(input.page, input.language || this.config.language)
+    );
+  }
+
+  /**
+   * Lists the TV genre IDs accepted by discovery filters.
+   */
+  async listTvGenres(language?: string): Promise<{ genres: Genre[] }> {
+    return this.requests.get<{ genres: Genre[] }>(
+      "/genre/tv/list",
+      new URLSearchParams({ language: language || this.config.language })
+    );
+  }
+
+  /**
+   * Lists regional TV provider IDs, ordered for the requested market.
+   */
+  async listTvWatchProviders(input: {
+    region?: string;
+    language?: string;
+  }): Promise<{ region: string; providers: ProviderCatalogItem[] }> {
+    return this.listProviderCatalog("/watch/providers/tv", input);
+  }
+
+  private async readMoviePage(
+    path: string,
+    query: URLSearchParams
+  ): Promise<MoviePage> {
+    const [response, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbMoviePage>(path, query),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeMoviePage(response, imageBaseUrl);
+  }
+
+  private async readTvPage(
+    path: string,
+    query: URLSearchParams
+  ): Promise<TvSeriesPage> {
+    const [response, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbTvPage>(path, query),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeTvPage(response, imageBaseUrl);
+  }
+
+  private async listProviderCatalog(
+    path: string,
+    input: { region?: string; language?: string }
+  ): Promise<{ region: string; providers: ProviderCatalogItem[] }> {
     const region = (input.region || this.config.region).toUpperCase();
     const response = await this.requests.get<{ results: TmdbProvider[] }>(
-      "/watch/providers/movie",
+      path,
       new URLSearchParams({
         watch_region: region,
         language: input.language || this.config.language
@@ -227,17 +430,6 @@ export class TmdbClient {
         }))
         .sort((left, right) => left.display_priority - right.display_priority)
     };
-  }
-
-  private async readMoviePage(
-    path: string,
-    query: URLSearchParams
-  ): Promise<MoviePage> {
-    const [response, imageBaseUrl] = await Promise.all([
-      this.requests.get<TmdbMoviePage>(path, query),
-      this.getImageBaseUrl()
-    ]);
-    return normalizeMoviePage(response, imageBaseUrl);
   }
 
   private async getImageBaseUrl(): Promise<string> {

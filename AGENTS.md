@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository is a local, read-only TMDB MCP server for movie discovery.
+This repository is a local, read-only TMDB MCP server for movie and TV discovery.
 
 ## Working Rules
 

@@ -1,6 +1,6 @@
 # tmdb-mcp
 
-Local, read-only TMDB MCP server for discovering movies from Codex.
+Local, read-only TMDB MCP server for discovering movies and TV series from Codex.
 
 ## Tools
 
@@ -12,10 +12,22 @@ Local, read-only TMDB MCP server for discovering movies from Codex.
 - `tmdb_get_related_movies`
 - `tmdb_list_movie_genres`
 - `tmdb_list_watch_providers`
+- `tmdb_search_tv`
+- `tmdb_get_tv_series`
+- `tmdb_list_tv_series`
+- `tmdb_trending_tv`
+- `tmdb_discover_tv`
+- `tmdb_get_related_tv`
+- `tmdb_list_tv_genres`
+- `tmdb_list_tv_watch_providers`
 
 The server supports title search, exact movie details, popular/top-rated/current
 lists, daily or weekly trends, advanced discovery filters, recommendations,
 similar movies, genres, and regional streaming-provider lookup.
+
+TV tools provide the same workflows for series, including airing-today and
+on-the-air lists, first-air-date discovery filters, creators, aggregate cast,
+episode runtime, season and episode counts, and regional providers.
 
 It does not expose account sessions, favorites, ratings, watchlists, lists, or
 any other mutation.
@@ -84,6 +96,9 @@ Use `pnpm dev` only while developing the server.
 
 Use `tmdb_list_movie_genres` and `tmdb_list_watch_providers` to resolve the IDs
 accepted by discovery filters.
+
+TV discovery uses the corresponding `tmdb_list_tv_genres` and
+`tmdb_list_tv_watch_providers` tools.
 
 ## Verification
 

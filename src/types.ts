@@ -98,3 +98,72 @@ export type DiscoverMoviesInput = {
   language?: string;
   region?: string;
 };
+
+export type TvSeriesSummary = {
+  id: number;
+  name: string;
+  original_name: string;
+  first_air_date: string | null;
+  first_air_year: number | null;
+  overview: string;
+  genre_ids: number[];
+  origin_countries: string[];
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  tmdb_url: string;
+};
+
+export type TvSeriesDetails = TvSeriesSummary & {
+  tagline: string | null;
+  status: string | null;
+  type: string | null;
+  episode_runtime_minutes: number | null;
+  seasons_total: number;
+  episodes_total: number;
+  last_air_date: string | null;
+  in_production: boolean;
+  genres: Genre[];
+  creators: Array<{ id: number; name: string }>;
+  networks: Array<{ id: number; name: string; logo_url: string | null }>;
+  cast: PersonCredit[];
+  trailer_url: string | null;
+  watch_providers: RegionalWatchProviders;
+};
+
+export type TvSeriesPage = {
+  items: TvSeriesSummary[];
+  page: number;
+  total_pages: number;
+  total_results: number;
+  next_page: number | null;
+};
+
+export type TvListCategory =
+  "airing_today" | "on_the_air" | "popular" | "top_rated";
+
+export type DiscoverTvInput = {
+  genres?: number[];
+  genreMode?: "and" | "or";
+  excludeGenres?: number[];
+  firstAirYear?: number;
+  firstAirDateFrom?: string;
+  firstAirDateTo?: string;
+  minRating?: number;
+  minVoteCount?: number;
+  minRuntime?: number;
+  maxRuntime?: number;
+  originalLanguage?: string;
+  watchProviderIds?: number[];
+  watchMonetizationTypes?: Array<"flatrate" | "free" | "ads" | "rent" | "buy">;
+  sortBy?:
+    | "popularity.desc"
+    | "vote_average.desc"
+    | "vote_count.desc"
+    | "first_air_date.desc";
+  page: number;
+  language?: string;
+  region?: string;
+};

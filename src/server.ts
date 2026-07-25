@@ -8,13 +8,21 @@ import { TmdbClient } from "./lib/tmdb.js";
 import {
   createToolHandlers,
   discoverMoviesInputSchema,
+  discoverTvInputSchema,
   getMovieSchema,
+  getTvSeriesSchema,
   listMovieGenresSchema,
   listMoviesSchema,
   listWatchProvidersSchema,
+  listTvGenresSchema,
+  listTvSeriesSchema,
+  listTvWatchProvidersSchema,
   relatedMoviesSchema,
+  relatedTvSchema,
   searchMoviesSchema,
-  trendingMoviesSchema
+  searchTvSchema,
+  trendingMoviesSchema,
+  trendingTvSchema
 } from "./tools.js";
 
 /**
@@ -110,6 +118,92 @@ server.registerTool(
     inputSchema: listWatchProvidersSchema.shape
   },
   handlers.listWatchProviders
+);
+
+server.registerTool(
+  "tmdb_search_tv",
+  {
+    title: "Search TMDB TV Series",
+    description:
+      "Searches TV series by original, translated, and alternative names.",
+    inputSchema: searchTvSchema.shape
+  },
+  handlers.searchTv
+);
+
+server.registerTool(
+  "tmdb_get_tv_series",
+  {
+    title: "Get TMDB TV Series",
+    description:
+      "Gets series details, creators, top cast, trailer, and regional watch providers.",
+    inputSchema: getTvSeriesSchema.shape
+  },
+  handlers.getTvSeries
+);
+
+server.registerTool(
+  "tmdb_list_tv_series",
+  {
+    title: "List TMDB TV Series",
+    description:
+      "Lists airing-today, on-the-air, popular, or top-rated TV series.",
+    inputSchema: listTvSeriesSchema.shape
+  },
+  handlers.listTvSeries
+);
+
+server.registerTool(
+  "tmdb_trending_tv",
+  {
+    title: "Get Trending TMDB TV Series",
+    description: "Lists TV series trending over the current day or week.",
+    inputSchema: trendingTvSchema.shape
+  },
+  handlers.trendingTv
+);
+
+server.registerTool(
+  "tmdb_discover_tv",
+  {
+    title: "Discover TMDB TV Series",
+    description:
+      "Discovers TV series using genre, air date, rating, runtime, language, provider, and sort filters.",
+    inputSchema: discoverTvInputSchema
+  },
+  handlers.discoverTv
+);
+
+server.registerTool(
+  "tmdb_get_related_tv",
+  {
+    title: "Get Related TMDB TV Series",
+    description:
+      "Gets TV recommendations by default, or narrower similar-series matches.",
+    inputSchema: relatedTvSchema.shape
+  },
+  handlers.getRelatedTv
+);
+
+server.registerTool(
+  "tmdb_list_tv_genres",
+  {
+    title: "List TMDB TV Genres",
+    description: "Lists TV genre names and IDs for discovery filters.",
+    inputSchema: listTvGenresSchema.shape
+  },
+  handlers.listTvGenres
+);
+
+server.registerTool(
+  "tmdb_list_tv_watch_providers",
+  {
+    title: "List TMDB TV Watch Providers",
+    description:
+      "Lists regional TV streaming-provider names and IDs for discovery filters.",
+    inputSchema: listTvWatchProvidersSchema.shape
+  },
+  handlers.listTvWatchProviders
 );
 
 await server.connect(new StdioServerTransport());
