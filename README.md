@@ -20,6 +20,9 @@ Local, read-only TMDB MCP server for discovering movies and TV series from Codex
 - `tmdb_get_related_tv`
 - `tmdb_list_tv_genres`
 - `tmdb_list_tv_watch_providers`
+- `tmdb_search_people`
+- `tmdb_get_person`
+- `tmdb_get_person_credits`
 
 The server supports title search, exact movie details, popular/top-rated/current
 lists, daily or weekly trends, advanced discovery filters, recommendations,
@@ -28,6 +31,11 @@ similar movies, genres, and regional streaming-provider lookup.
 TV tools provide the same workflows for series, including airing-today and
 on-the-air lists, first-air-date discovery filters, creators, aggregate cast,
 episode runtime, season and episode counts, and regional providers.
+
+People tools search actors and crew, return biography details, and provide
+bounded movie, TV, or combined credits filtered by cast or crew roles. Movie
+discovery also accepts person, cast, and crew IDs for queries such as highly
+rated films directed by a particular filmmaker.
 
 It does not expose account sessions, favorites, ratings, watchlists, lists, or
 any other mutation.
@@ -99,6 +107,10 @@ accepted by discovery filters.
 
 TV discovery uses the corresponding `tmdb_list_tv_genres` and
 `tmdb_list_tv_watch_providers` tools.
+
+Resolve a person ID with `tmdb_search_people`, inspect their biography with
+`tmdb_get_person`, then use `tmdb_get_person_credits` or pass the ID through
+`castIds`, `crewIds`, or `personIds` in `tmdb_discover_movies`.
 
 ## Verification
 

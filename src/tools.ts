@@ -57,6 +57,9 @@ const discoverMoviesFields = {
     .regex(/^[a-z]{2}$/)
     .optional(),
   watchProviderIds: z.array(z.number().int().positive()).max(30).optional(),
+  castIds: z.array(z.number().int().positive()).max(20).optional(),
+  crewIds: z.array(z.number().int().positive()).max(20).optional(),
+  personIds: z.array(z.number().int().positive()).max(20).optional(),
   watchMonetizationTypes: z
     .array(z.enum(["flatrate", "free", "ads", "rent", "buy"]))
     .max(5)
@@ -223,6 +226,27 @@ export const listTvWatchProvidersSchema = z.object({
   language: languageSchema
 });
 
+export const searchPeopleSchema = z.object({
+  query: z.string().trim().min(1),
+  page: pageSchema,
+  language: languageSchema,
+  includeAdult: z.boolean().default(false)
+});
+
+export const getPersonSchema = z.object({
+  personId: movieIdSchema,
+  language: languageSchema
+});
+
+export const getPersonCreditsSchema = z.object({
+  personId: movieIdSchema,
+  mediaType: z.enum(["movie", "tv", "combined"]).default("combined"),
+  creditType: z.enum(["cast", "crew", "all"]).default("all"),
+  sortBy: z.enum(["date", "popularity", "vote_average"]).default("popularity"),
+  limit: z.number().int().min(1).max(100).default(30),
+  language: languageSchema
+});
+
 /**
  * Produces transport-independent handlers so validation and error behavior can
  * be tested without starting an MCP stdio process.
@@ -288,6 +312,16 @@ export function createToolHandlers(client: TmdbClient) {
     listTvWatchProviders: (args: unknown) =>
       withParsedArgs(listTvWatchProvidersSchema, args, (input) =>
         client.listTvWatchProviders(input)
+      ),
+    searchPeople: (args: unknown) =>
+      withParsedArgs(searchPeopleSchema, args, (input) =>
+        client.searchPeople(input)
+      ),
+    getPerson: (args: unknown) =>
+      withParsedArgs(getPersonSchema, args, (input) => client.getPerson(input)),
+    getPersonCredits: (args: unknown) =>
+      withParsedArgs(getPersonCreditsSchema, args, (input) =>
+        client.getPersonCredits(input)
       )
   };
 }

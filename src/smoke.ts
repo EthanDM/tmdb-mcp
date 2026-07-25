@@ -107,8 +107,38 @@ async function main(): Promise<void> {
   assertNonempty(discoveredTv.items, "Discover TV");
   assertNonempty(relatedTv.items, "Related TV");
 
+  logStep("search people and inspect credits");
+  const people = await client.searchPeople({
+    query: process.env.TMDB_SMOKE_PERSON_QUERY?.trim() || "Denis Villeneuve",
+    page: 1,
+    includeAdult: false
+  });
+  const person = people.items[0];
+  if (!person) throw new Error("People search returned no result.");
+  const [personDetails, personCredits, directedMovies] = await Promise.all([
+    client.getPerson({ personId: person.id }),
+    client.getPersonCredits({
+      personId: person.id,
+      mediaType: "movie",
+      creditType: "crew",
+      sortBy: "popularity",
+      limit: 20
+    }),
+    client.discoverMovies({
+      crewIds: [person.id],
+      minVoteCount: 100,
+      sortBy: "popularity.desc",
+      page: 1
+    })
+  ]);
+  if (personDetails.id !== person.id) {
+    throw new Error("Exact person lookup mismatch.");
+  }
+  assertNonempty(personCredits.items, "Person credits");
+  assertNonempty(directedMovies.items, "Person-filtered movie discovery");
+
   console.log(
-    `Smoke passed: movie ${details.title}; TV ${tvDetails.name}; ${popular.total_results} popular movies; ${popularTv.total_results} popular TV series.`
+    `Smoke passed: movie ${details.title}; TV ${tvDetails.name}; person ${personDetails.name}; ${popular.total_results} popular movies; ${popularTv.total_results} popular TV series.`
   );
 }
 

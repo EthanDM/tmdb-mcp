@@ -6,12 +6,23 @@ import type {
   MovieDetails,
   MovieListCategory,
   MoviePage,
+  PersonCreditsResult,
+  PersonDetails,
+  PersonSearchPage,
   ProviderCatalogItem,
   RelatedMovieKind,
   TvListCategory,
   TvSeriesDetails,
   TvSeriesPage
 } from "../types.js";
+import {
+  normalizePersonCredits,
+  normalizePersonDetails,
+  normalizePersonSearchPage,
+  type TmdbPersonCreditsResponse,
+  type TmdbPersonDetails,
+  type TmdbPersonSearchPage
+} from "./tmdb-people-normalizers.js";
 import {
   normalizeTvDetails,
   normalizeTvPage,
@@ -171,6 +182,15 @@ export class TmdbClient {
     if (input.watchProviderIds?.length) {
       query.set("watch_region", region);
       query.set("with_watch_providers", input.watchProviderIds.join("|"));
+    }
+    if (input.castIds?.length) {
+      query.set("with_cast", input.castIds.join(","));
+    }
+    if (input.crewIds?.length) {
+      query.set("with_crew", input.crewIds.join(","));
+    }
+    if (input.personIds?.length) {
+      query.set("with_people", input.personIds.join(","));
     }
     if (input.watchMonetizationTypes?.length) {
       query.set("watch_region", region);
@@ -379,6 +399,71 @@ export class TmdbClient {
     language?: string;
   }): Promise<{ region: string; providers: ProviderCatalogItem[] }> {
     return this.listProviderCatalog("/watch/providers/tv", input);
+  }
+
+  /**
+   * Searches people by primary and also-known-as names.
+   */
+  async searchPeople(input: {
+    query: string;
+    page: number;
+    language?: string;
+    includeAdult: boolean;
+  }): Promise<PersonSearchPage> {
+    const query = baseQuery(input.page, input.language || this.config.language);
+    query.set("query", input.query);
+    query.set("include_adult", String(input.includeAdult));
+    const [response, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbPersonSearchPage>("/search/person", query),
+      this.getImageBaseUrl()
+    ]);
+    return normalizePersonSearchPage(response, imageBaseUrl);
+  }
+
+  /**
+   * Returns one person's biography and stable external identity fields.
+   */
+  async getPerson(input: {
+    personId: number;
+    language?: string;
+  }): Promise<PersonDetails> {
+    const [person, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbPersonDetails>(
+        `/person/${encodeURIComponent(input.personId)}`,
+        new URLSearchParams({
+          language: input.language || this.config.language
+        })
+      ),
+      this.getImageBaseUrl()
+    ]);
+    return normalizePersonDetails(person, imageBaseUrl);
+  }
+
+  /**
+   * Returns a bounded, filterable filmography from TMDB's unpaginated credits.
+   */
+  async getPersonCredits(input: {
+    personId: number;
+    mediaType: "movie" | "tv" | "combined";
+    creditType: "cast" | "crew" | "all";
+    sortBy: "date" | "popularity" | "vote_average";
+    limit: number;
+    language?: string;
+  }): Promise<PersonCreditsResult> {
+    const endpoint =
+      input.mediaType === "combined"
+        ? "combined_credits"
+        : `${input.mediaType}_credits`;
+    const [credits, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbPersonCreditsResponse>(
+        `/person/${encodeURIComponent(input.personId)}/${endpoint}`,
+        new URLSearchParams({
+          language: input.language || this.config.language
+        })
+      ),
+      this.getImageBaseUrl()
+    ]);
+    return normalizePersonCredits(credits, input, imageBaseUrl);
   }
 
   private async readMoviePage(

@@ -68,6 +68,9 @@ describe("TmdbClient", () => {
         expect(url.searchParams.get("vote_count.gte")).toBe("200");
         expect(url.searchParams.get("with_watch_providers")).toBe("8|9");
         expect(url.searchParams.get("watch_region")).toBe("US");
+        expect(url.searchParams.get("with_cast")).toBe("101,102");
+        expect(url.searchParams.get("with_crew")).toBe("137427");
+        expect(url.searchParams.get("with_people")).toBe("42");
         return jsonResponse(moviePage([]));
       }
     });
@@ -79,6 +82,9 @@ describe("TmdbClient", () => {
       excludeGenres: [27],
       minRating: 7,
       watchProviderIds: [8, 9],
+      castIds: [101, 102],
+      crewIds: [137427],
+      personIds: [42],
       sortBy: "vote_average.desc",
       page: 1,
       language: "en-US",

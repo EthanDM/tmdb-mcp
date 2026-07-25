@@ -10,6 +10,8 @@ import {
   discoverMoviesInputSchema,
   discoverTvInputSchema,
   getMovieSchema,
+  getPersonCreditsSchema,
+  getPersonSchema,
   getTvSeriesSchema,
   listMovieGenresSchema,
   listMoviesSchema,
@@ -20,6 +22,7 @@ import {
   relatedMoviesSchema,
   relatedTvSchema,
   searchMoviesSchema,
+  searchPeopleSchema,
   searchTvSchema,
   trendingMoviesSchema,
   trendingTvSchema
@@ -204,6 +207,38 @@ server.registerTool(
     inputSchema: listTvWatchProvidersSchema.shape
   },
   handlers.listTvWatchProviders
+);
+
+server.registerTool(
+  "tmdb_search_people",
+  {
+    title: "Search TMDB People",
+    description: "Searches actors, directors, writers, and other crew by name.",
+    inputSchema: searchPeopleSchema.shape
+  },
+  handlers.searchPeople
+);
+
+server.registerTool(
+  "tmdb_get_person",
+  {
+    title: "Get TMDB Person",
+    description:
+      "Gets a person's biography, known department, birthplace, profile, and external identity.",
+    inputSchema: getPersonSchema.shape
+  },
+  handlers.getPerson
+);
+
+server.registerTool(
+  "tmdb_get_person_credits",
+  {
+    title: "Get TMDB Person Credits",
+    description:
+      "Gets a bounded movie, TV, or combined filmography filtered by cast or crew roles.",
+    inputSchema: getPersonCreditsSchema.shape
+  },
+  handlers.getPersonCredits
 );
 
 await server.connect(new StdioServerTransport());

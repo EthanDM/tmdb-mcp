@@ -87,6 +87,9 @@ export type DiscoverMoviesInput = {
   maxRuntime?: number;
   originalLanguage?: string;
   watchProviderIds?: number[];
+  castIds?: number[];
+  crewIds?: number[];
+  personIds?: number[];
   watchMonetizationTypes?: Array<"flatrate" | "free" | "ads" | "rent" | "buy">;
   sortBy?:
     | "popularity.desc"
@@ -97,6 +100,69 @@ export type DiscoverMoviesInput = {
   page: number;
   language?: string;
   region?: string;
+};
+
+export type PersonSearchResult = {
+  id: number;
+  name: string;
+  known_for_department: string | null;
+  popularity: number;
+  profile_url: string | null;
+  known_for: Array<{
+    media_type: "movie" | "tv";
+    id: number;
+    title: string;
+    year: number | null;
+  }>;
+  tmdb_url: string;
+};
+
+export type PersonSearchPage = {
+  items: PersonSearchResult[];
+  page: number;
+  total_pages: number;
+  total_results: number;
+  next_page: number | null;
+};
+
+export type PersonDetails = {
+  id: number;
+  name: string;
+  also_known_as: string[];
+  biography: string;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  known_for_department: string | null;
+  popularity: number;
+  profile_url: string | null;
+  imdb_id: string | null;
+  tmdb_url: string;
+};
+
+export type PersonCreditResult = {
+  media_type: "movie" | "tv";
+  credit_type: "cast" | "crew";
+  id: number;
+  title: string;
+  date: string | null;
+  year: number | null;
+  character: string | null;
+  job: string | null;
+  department: string | null;
+  episode_count: number | null;
+  vote_average: number;
+  vote_count: number;
+  popularity: number;
+  poster_url: string | null;
+  tmdb_url: string;
+};
+
+export type PersonCreditsResult = {
+  person_id: number;
+  items: PersonCreditResult[];
+  total_matching: number;
+  returned: number;
 };
 
 export type TvSeriesSummary = {
