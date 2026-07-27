@@ -9,10 +9,15 @@ import {
   createToolHandlers,
   discoverMoviesInputSchema,
   discoverTvInputSchema,
+  findByExternalIdSchema,
+  getCollectionSchema,
+  getContentRatingsSchema,
   getMovieSchema,
   getPersonCreditsSchema,
   getPersonSchema,
   getTvSeriesSchema,
+  getTvEpisodeSchema,
+  getTvSeasonSchema,
   listMovieGenresSchema,
   listMoviesSchema,
   listWatchProvidersSchema,
@@ -22,6 +27,7 @@ import {
   relatedMoviesSchema,
   relatedTvSchema,
   searchMoviesSchema,
+  searchKeywordsSchema,
   searchPeopleSchema,
   searchTvSchema,
   trendingMoviesSchema,
@@ -239,6 +245,71 @@ server.registerTool(
     inputSchema: getPersonCreditsSchema.shape
   },
   handlers.getPersonCredits
+);
+
+server.registerTool(
+  "tmdb_get_tv_season",
+  {
+    title: "Get TMDB TV Season",
+    description: "Gets a TV season and its complete episode list.",
+    inputSchema: getTvSeasonSchema.shape
+  },
+  handlers.getTvSeason
+);
+
+server.registerTool(
+  "tmdb_get_tv_episode",
+  {
+    title: "Get TMDB TV Episode",
+    description:
+      "Gets an episode's details, directors, guest stars, and trailer.",
+    inputSchema: getTvEpisodeSchema.shape
+  },
+  handlers.getTvEpisode
+);
+
+server.registerTool(
+  "tmdb_get_collection",
+  {
+    title: "Get TMDB Movie Collection",
+    description:
+      "Gets a movie franchise or collection with its films in release order.",
+    inputSchema: getCollectionSchema.shape
+  },
+  handlers.getCollection
+);
+
+server.registerTool(
+  "tmdb_search_keywords",
+  {
+    title: "Search TMDB Keywords",
+    description:
+      "Searches for keyword IDs that can be used in movie and TV discovery.",
+    inputSchema: searchKeywordsSchema.shape
+  },
+  handlers.searchKeywords
+);
+
+server.registerTool(
+  "tmdb_find_by_external_id",
+  {
+    title: "Find TMDB Item by External ID",
+    description:
+      "Finds movies, TV series, seasons, episodes, or people from an external ID.",
+    inputSchema: findByExternalIdSchema.shape
+  },
+  handlers.findByExternalId
+);
+
+server.registerTool(
+  "tmdb_get_content_ratings",
+  {
+    title: "Get TMDB Content Ratings",
+    description:
+      "Gets regional movie certifications or TV content ratings, optionally for one region.",
+    inputSchema: getContentRatingsSchema.shape
+  },
+  handlers.getContentRatings
 );
 
 await server.connect(new StdioServerTransport());

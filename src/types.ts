@@ -90,6 +90,8 @@ export type DiscoverMoviesInput = {
   castIds?: number[];
   crewIds?: number[];
   personIds?: number[];
+  keywordIds?: number[];
+  keywordMode?: "and" | "or";
   watchMonetizationTypes?: Array<"flatrate" | "free" | "ads" | "rent" | "buy">;
   sortBy?:
     | "popularity.desc"
@@ -223,6 +225,8 @@ export type DiscoverTvInput = {
   maxRuntime?: number;
   originalLanguage?: string;
   watchProviderIds?: number[];
+  keywordIds?: number[];
+  keywordMode?: "and" | "or";
   watchMonetizationTypes?: Array<"flatrate" | "free" | "ads" | "rent" | "buy">;
   sortBy?:
     | "popularity.desc"
@@ -232,4 +236,86 @@ export type DiscoverTvInput = {
   page: number;
   language?: string;
   region?: string;
+};
+
+export type TvEpisodeSummary = {
+  id: number;
+  name: string;
+  overview: string;
+  air_date: string | null;
+  season_number: number;
+  episode_number: number;
+  runtime_minutes: number | null;
+  vote_average: number;
+  vote_count: number;
+  still_url: string | null;
+  tmdb_url: string;
+};
+
+export type TvSeasonDetails = {
+  id: number;
+  series_id: number;
+  name: string;
+  overview: string;
+  air_date: string | null;
+  season_number: number;
+  poster_url: string | null;
+  episodes: TvEpisodeSummary[];
+  tmdb_url: string;
+};
+
+export type TvEpisodeDetails = TvEpisodeSummary & {
+  production_code: string | null;
+  directors: PersonCredit[];
+  guest_stars: PersonCredit[];
+  trailer_url: string | null;
+};
+
+export type MovieCollectionDetails = {
+  id: number;
+  name: string;
+  overview: string;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  parts: MovieSummary[];
+  tmdb_url: string;
+};
+
+export type KeywordSearchPage = {
+  items: Array<{ id: number; name: string }>;
+  page: number;
+  total_pages: number;
+  total_results: number;
+  next_page: number | null;
+};
+
+export type ExternalIdMatch = {
+  media_type: "movie" | "tv" | "tv_season" | "tv_episode" | "person";
+  id: number;
+  title: string;
+  date: string | null;
+  tmdb_url: string;
+  series_id?: number;
+  season_number?: number;
+  episode_number?: number;
+};
+
+export type ExternalIdFindResult = {
+  external_id: string;
+  external_source: string;
+  matches: ExternalIdMatch[];
+};
+
+export type ContentRatingsResult = {
+  media_type: "movie" | "tv";
+  id: number;
+  regions: Array<{
+    region: string;
+    ratings: Array<{
+      certification: string;
+      release_date: string | null;
+      release_type: number | null;
+      note: string | null;
+    }>;
+  }>;
 };

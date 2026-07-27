@@ -129,6 +129,7 @@ describe("TmdbClient TV", () => {
         expect(url.searchParams.get("vote_count.gte")).toBe("200");
         expect(url.searchParams.get("with_watch_providers")).toBe("350");
         expect(url.searchParams.get("watch_region")).toBe("US");
+        expect(url.searchParams.get("with_keywords")).toBe("210024,999");
         return jsonResponse(tvPage([]));
       }
     });
@@ -139,6 +140,7 @@ describe("TmdbClient TV", () => {
       genreMode: "or",
       firstAirDateFrom: "2020-01-01",
       watchProviderIds: [350],
+      keywordIds: [210024, 999],
       sortBy: "vote_average.desc",
       page: 1
     });

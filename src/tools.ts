@@ -13,6 +13,7 @@ const regionSchema = z
   .optional();
 const pageSchema = z.number().int().min(1).max(500).default(1);
 const movieIdSchema = z.number().int().positive();
+const seasonNumberSchema = z.number().int().min(0);
 
 export const searchMoviesSchema = z.object({
   query: z.string().trim().min(1),
@@ -60,6 +61,8 @@ const discoverMoviesFields = {
   castIds: z.array(z.number().int().positive()).max(20).optional(),
   crewIds: z.array(z.number().int().positive()).max(20).optional(),
   personIds: z.array(z.number().int().positive()).max(20).optional(),
+  keywordIds: z.array(z.number().int().positive()).max(20).optional(),
+  keywordMode: z.enum(["and", "or"]).default("and"),
   watchMonetizationTypes: z
     .array(z.enum(["flatrate", "free", "ads", "rent", "buy"]))
     .max(5)
@@ -164,6 +167,8 @@ const discoverTvFields = {
     .regex(/^[a-z]{2}$/)
     .optional(),
   watchProviderIds: z.array(z.number().int().positive()).max(30).optional(),
+  keywordIds: z.array(z.number().int().positive()).max(20).optional(),
+  keywordMode: z.enum(["and", "or"]).default("and"),
   watchMonetizationTypes: z
     .array(z.enum(["flatrate", "free", "ads", "rent", "buy"]))
     .max(5)
@@ -247,6 +252,50 @@ export const getPersonCreditsSchema = z.object({
   language: languageSchema
 });
 
+export const getTvSeasonSchema = z.object({
+  seriesId: movieIdSchema,
+  seasonNumber: seasonNumberSchema,
+  language: languageSchema
+});
+
+export const getTvEpisodeSchema = z.object({
+  seriesId: movieIdSchema,
+  seasonNumber: seasonNumberSchema,
+  episodeNumber: z.number().int().positive(),
+  language: languageSchema
+});
+
+export const getCollectionSchema = z.object({
+  collectionId: movieIdSchema,
+  language: languageSchema
+});
+
+export const searchKeywordsSchema = z.object({
+  query: z.string().trim().min(1),
+  page: pageSchema
+});
+
+export const findByExternalIdSchema = z.object({
+  externalId: z.string().trim().min(1),
+  externalSource: z.enum([
+    "imdb_id",
+    "facebook_id",
+    "instagram_id",
+    "tvdb_id",
+    "tiktok_id",
+    "twitter_id",
+    "wikidata_id",
+    "youtube_id"
+  ]),
+  language: languageSchema
+});
+
+export const getContentRatingsSchema = z.object({
+  mediaType: z.enum(["movie", "tv"]),
+  id: movieIdSchema,
+  region: regionSchema
+});
+
 /**
  * Produces transport-independent handlers so validation and error behavior can
  * be tested without starting an MCP stdio process.
@@ -322,6 +371,30 @@ export function createToolHandlers(client: TmdbClient) {
     getPersonCredits: (args: unknown) =>
       withParsedArgs(getPersonCreditsSchema, args, (input) =>
         client.getPersonCredits(input)
+      ),
+    getTvSeason: (args: unknown) =>
+      withParsedArgs(getTvSeasonSchema, args, (input) =>
+        client.getTvSeason(input)
+      ),
+    getTvEpisode: (args: unknown) =>
+      withParsedArgs(getTvEpisodeSchema, args, (input) =>
+        client.getTvEpisode(input)
+      ),
+    getCollection: (args: unknown) =>
+      withParsedArgs(getCollectionSchema, args, (input) =>
+        client.getCollection(input)
+      ),
+    searchKeywords: (args: unknown) =>
+      withParsedArgs(searchKeywordsSchema, args, (input) =>
+        client.searchKeywords(input)
+      ),
+    findByExternalId: (args: unknown) =>
+      withParsedArgs(findByExternalIdSchema, args, (input) =>
+        client.findByExternalId(input)
+      ),
+    getContentRatings: (args: unknown) =>
+      withParsedArgs(getContentRatingsSchema, args, (input) =>
+        client.getContentRatings(input)
       )
   };
 }

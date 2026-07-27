@@ -71,6 +71,7 @@ describe("TmdbClient", () => {
         expect(url.searchParams.get("with_cast")).toBe("101,102");
         expect(url.searchParams.get("with_crew")).toBe("137427");
         expect(url.searchParams.get("with_people")).toBe("42");
+        expect(url.searchParams.get("with_keywords")).toBe("999|1000");
         return jsonResponse(moviePage([]));
       }
     });
@@ -85,6 +86,8 @@ describe("TmdbClient", () => {
       castIds: [101, 102],
       crewIds: [137427],
       personIds: [42],
+      keywordIds: [999, 1000],
+      keywordMode: "or",
       sortBy: "vote_average.desc",
       page: 1,
       language: "en-US",

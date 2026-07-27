@@ -23,6 +23,12 @@ Local, read-only TMDB MCP server for discovering movies and TV series from Codex
 - `tmdb_search_people`
 - `tmdb_get_person`
 - `tmdb_get_person_credits`
+- `tmdb_get_tv_season`
+- `tmdb_get_tv_episode`
+- `tmdb_get_collection`
+- `tmdb_search_keywords`
+- `tmdb_find_by_external_id`
+- `tmdb_get_content_ratings`
 
 The server supports title search, exact movie details, popular/top-rated/current
 lists, daily or weekly trends, advanced discovery filters, recommendations,
@@ -36,6 +42,13 @@ People tools search actors and crew, return biography details, and provide
 bounded movie, TV, or combined credits filtered by cast or crew roles. Movie
 discovery also accepts person, cast, and crew IDs for queries such as highly
 rated films directed by a particular filmmaker.
+
+Additional catalog tools inspect full TV seasons and individual episodes,
+expand movie collections in release order, resolve TMDB entries from external
+IDs such as IMDb or TVDB, and return regional movie certifications or TV
+content ratings. Keyword search returns stable IDs accepted by the
+`keywordIds` filter in both movie and TV discovery; `keywordMode` controls
+whether multiple IDs are combined with AND or OR semantics.
 
 It does not expose account sessions, favorites, ratings, watchlists, lists, or
 any other mutation.
@@ -111,6 +124,9 @@ TV discovery uses the corresponding `tmdb_list_tv_genres` and
 Resolve a person ID with `tmdb_search_people`, inspect their biography with
 `tmdb_get_person`, then use `tmdb_get_person_credits` or pass the ID through
 `castIds`, `crewIds`, or `personIds` in `tmdb_discover_movies`.
+
+Resolve a discovery keyword with `tmdb_search_keywords`, then pass its ID to
+`keywordIds` in `tmdb_discover_movies` or `tmdb_discover_tv`.
 
 ## Verification
 

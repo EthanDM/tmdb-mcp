@@ -1,8 +1,12 @@
 import type { TmdbConfig } from "../config.js";
 import type {
+  ContentRatingsResult,
   DiscoverTvInput,
   DiscoverMoviesInput,
+  ExternalIdFindResult,
   Genre,
+  KeywordSearchPage,
+  MovieCollectionDetails,
   MovieDetails,
   MovieListCategory,
   MoviePage,
@@ -12,6 +16,8 @@ import type {
   ProviderCatalogItem,
   RelatedMovieKind,
   TvListCategory,
+  TvEpisodeDetails,
+  TvSeasonDetails,
   TvSeriesDetails,
   TvSeriesPage
 } from "../types.js";
@@ -37,6 +43,18 @@ import {
   type TmdbProvider,
   type TmdbWatchProviderResponse
 } from "./tmdb-normalizers.js";
+import {
+  normalizeCollection,
+  normalizeContentRatings,
+  normalizeFindResult,
+  normalizeKeywordPage,
+  normalizeTvEpisode,
+  normalizeTvSeason,
+  type TmdbCollection,
+  type TmdbFindResponse,
+  type TmdbKeywordPage,
+  type TmdbSeason
+} from "./tmdb-utility-normalizers.js";
 import { TmdbRequestClient, type FetchLike } from "./tmdb-request-client.js";
 
 const APPENDED_MOVIE_DATA = "credits,videos";
@@ -191,6 +209,12 @@ export class TmdbClient {
     }
     if (input.personIds?.length) {
       query.set("with_people", input.personIds.join(","));
+    }
+    if (input.keywordIds?.length) {
+      query.set(
+        "with_keywords",
+        input.keywordIds.join(input.keywordMode === "or" ? "|" : ",")
+      );
     }
     if (input.watchMonetizationTypes?.length) {
       query.set("watch_region", region);
@@ -355,6 +379,12 @@ export class TmdbClient {
       query.set("watch_region", region);
       query.set("with_watch_providers", input.watchProviderIds.join("|"));
     }
+    if (input.keywordIds?.length) {
+      query.set(
+        "with_keywords",
+        input.keywordIds.join(input.keywordMode === "or" ? "|" : ",")
+      );
+    }
     if (input.watchMonetizationTypes?.length) {
       query.set("watch_region", region);
       query.set(
@@ -399,6 +429,116 @@ export class TmdbClient {
     language?: string;
   }): Promise<{ region: string; providers: ProviderCatalogItem[] }> {
     return this.listProviderCatalog("/watch/providers/tv", input);
+  }
+
+  async getTvSeason(input: {
+    seriesId: number;
+    seasonNumber: number;
+    language?: string;
+  }): Promise<TvSeasonDetails> {
+    const [season, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbSeason>(
+        `/tv/${encodeURIComponent(input.seriesId)}/season/${encodeURIComponent(input.seasonNumber)}`,
+        new URLSearchParams({
+          language: input.language || this.config.language
+        })
+      ),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeTvSeason(input.seriesId, season, imageBaseUrl);
+  }
+
+  async getTvEpisode(input: {
+    seriesId: number;
+    seasonNumber: number;
+    episodeNumber: number;
+    language?: string;
+  }): Promise<TvEpisodeDetails> {
+    const [episode, imageBaseUrl] = await Promise.all([
+      this.requests.get<Parameters<typeof normalizeTvEpisode>[1]>(
+        `/tv/${encodeURIComponent(input.seriesId)}/season/${encodeURIComponent(input.seasonNumber)}/episode/${encodeURIComponent(input.episodeNumber)}`,
+        new URLSearchParams({
+          language: input.language || this.config.language,
+          append_to_response: "credits,videos"
+        })
+      ),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeTvEpisode(input.seriesId, episode, imageBaseUrl);
+  }
+
+  async getCollection(input: {
+    collectionId: number;
+    language?: string;
+  }): Promise<MovieCollectionDetails> {
+    const [collection, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbCollection>(
+        `/collection/${encodeURIComponent(input.collectionId)}`,
+        new URLSearchParams({
+          language: input.language || this.config.language
+        })
+      ),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeCollection(collection, imageBaseUrl);
+  }
+
+  async searchKeywords(input: {
+    query: string;
+    page: number;
+  }): Promise<KeywordSearchPage> {
+    const query = new URLSearchParams({
+      query: input.query,
+      page: String(input.page)
+    });
+    return normalizeKeywordPage(
+      await this.requests.get<TmdbKeywordPage>("/search/keyword", query)
+    );
+  }
+
+  async findByExternalId(input: {
+    externalId: string;
+    externalSource:
+      | "imdb_id"
+      | "facebook_id"
+      | "instagram_id"
+      | "tvdb_id"
+      | "tiktok_id"
+      | "twitter_id"
+      | "wikidata_id"
+      | "youtube_id";
+    language?: string;
+  }): Promise<ExternalIdFindResult> {
+    const response = await this.requests.get<TmdbFindResponse>(
+      `/find/${encodeURIComponent(input.externalId)}`,
+      new URLSearchParams({
+        external_source: input.externalSource,
+        language: input.language || this.config.language
+      })
+    );
+    return normalizeFindResult(
+      input.externalId,
+      input.externalSource,
+      response
+    );
+  }
+
+  async getContentRatings(input: {
+    mediaType: "movie" | "tv";
+    id: number;
+    region?: string;
+  }): Promise<ContentRatingsResult> {
+    const suffix =
+      input.mediaType === "movie" ? "release_dates" : "content_ratings";
+    const response = await this.requests.get<unknown>(
+      `/${input.mediaType}/${encodeURIComponent(input.id)}/${suffix}`
+    );
+    return normalizeContentRatings(
+      input.mediaType,
+      input.id,
+      response,
+      input.region
+    );
   }
 
   /**

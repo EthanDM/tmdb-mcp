@@ -137,8 +137,60 @@ async function main(): Promise<void> {
   assertNonempty(personCredits.items, "Person credits");
   assertNonempty(directedMovies.items, "Person-filtered movie discovery");
 
+  logStep("seasons, episodes, and collections");
+  const season = await client.getTvSeason({
+    seriesId: tvSeed.id,
+    seasonNumber: 1
+  });
+  const episodeSeed = season.episodes[0];
+  if (!episodeSeed) throw new Error("TV season returned no episodes.");
+  const episode = await client.getTvEpisode({
+    seriesId: tvSeed.id,
+    seasonNumber: episodeSeed.season_number,
+    episodeNumber: episodeSeed.episode_number
+  });
+  if (episode.id !== episodeSeed.id) {
+    throw new Error("Exact TV episode lookup mismatch.");
+  }
+  const collection = await client.getCollection({
+    collectionId: 2344
+  });
+  assertNonempty(collection.parts, "Movie collection");
+
+  logStep("keywords, external IDs, and content ratings");
+  const keywords = await client.searchKeywords({
+    query: "time travel",
+    page: 1
+  });
+  const keyword = keywords.items[0];
+  if (!keyword) throw new Error("Keyword search returned no results.");
+  const [keywordMovies, keywordTv, externalMatch, movieRatings, tvRatings] =
+    await Promise.all([
+      client.discoverMovies({ keywordIds: [keyword.id], page: 1 }),
+      client.discoverTv({ keywordIds: [keyword.id], page: 1 }),
+      client.findByExternalId({
+        externalId: details.imdb_id || "tt0133093",
+        externalSource: "imdb_id"
+      }),
+      client.getContentRatings({
+        mediaType: "movie",
+        id: 603,
+        region: "US"
+      }),
+      client.getContentRatings({
+        mediaType: "tv",
+        id: 95396,
+        region: "US"
+      })
+    ]);
+  assertNonempty(keywordMovies.items, "Keyword movie discovery");
+  assertNonempty(keywordTv.items, "Keyword TV discovery");
+  assertNonempty(externalMatch.matches, "External ID lookup");
+  assertNonempty(movieRatings.regions, "Movie certifications");
+  assertNonempty(tvRatings.regions, "TV content ratings");
+
   console.log(
-    `Smoke passed: movie ${details.title}; TV ${tvDetails.name}; person ${personDetails.name}; ${popular.total_results} popular movies; ${popularTv.total_results} popular TV series.`
+    `Smoke passed: movie ${details.title}; TV ${tvDetails.name}; episode ${episode.name}; collection ${collection.name}; person ${personDetails.name}; ${popular.total_results} popular movies; ${popularTv.total_results} popular TV series.`
   );
 }
 
