@@ -1,6 +1,9 @@
 import type { TmdbConfig } from "../config.js";
 import type {
+  CatalogSearchPage,
+  CollectionSearchPage,
   ContentRatingsResult,
+  CreditsResult,
   DiscoverTvInput,
   DiscoverMoviesInput,
   ExternalIdFindResult,
@@ -15,12 +18,23 @@ import type {
   PersonSearchPage,
   ProviderCatalogItem,
   RelatedMovieKind,
+  ReviewPage,
   TvListCategory,
   TvEpisodeDetails,
   TvSeasonDetails,
   TvSeriesDetails,
   TvSeriesPage
 } from "../types.js";
+import {
+  normalizeCollectionSearch,
+  normalizeCredits,
+  normalizeMultiSearch,
+  normalizeReviews,
+  type TmdbCollectionPage,
+  type TmdbCredits,
+  type TmdbMultiPage,
+  type TmdbReviewPage
+} from "./tmdb-catalog-normalizers.js";
 import {
   normalizePersonCredits,
   normalizePersonDetails,
@@ -539,6 +553,89 @@ export class TmdbClient {
       response,
       input.region
     );
+  }
+
+  async searchMulti(input: {
+    query: string;
+    page: number;
+    language?: string;
+    includeAdult: boolean;
+  }): Promise<CatalogSearchPage> {
+    const query = baseQuery(input.page, input.language || this.config.language);
+    query.set("query", input.query);
+    query.set("include_adult", String(input.includeAdult));
+    const [response, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbMultiPage>("/search/multi", query),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeMultiSearch(response, imageBaseUrl);
+  }
+
+  async searchCollections(input: {
+    query: string;
+    page: number;
+    language?: string;
+  }): Promise<CollectionSearchPage> {
+    const query = baseQuery(input.page, input.language || this.config.language);
+    query.set("query", input.query);
+    const [response, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbCollectionPage>("/search/collection", query),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeCollectionSearch(response, imageBaseUrl);
+  }
+
+  /**
+   * Uses aggregate credits for a TV series or season so results cover the
+   * complete run rather than only the newest season.
+   */
+  async getCredits(input: {
+    mediaType: "movie" | "tv";
+    id: number;
+    seasonNumber?: number;
+    episodeNumber?: number;
+    creditType: "cast" | "crew" | "all";
+    limit: number;
+    language?: string;
+  }): Promise<CreditsResult> {
+    let path = `/${input.mediaType}/${encodeURIComponent(input.id)}/credits`;
+    if (input.mediaType === "tv") {
+      path = `/tv/${encodeURIComponent(input.id)}`;
+      if (input.seasonNumber !== undefined) {
+        path += `/season/${encodeURIComponent(input.seasonNumber)}`;
+      }
+      if (input.episodeNumber !== undefined) {
+        path += `/episode/${encodeURIComponent(input.episodeNumber)}/credits`;
+      } else {
+        path += "/aggregate_credits";
+      }
+    }
+    const [response, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbCredits>(
+        path,
+        new URLSearchParams({
+          language: input.language || this.config.language
+        })
+      ),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeCredits(response, input, imageBaseUrl);
+  }
+
+  async getReviews(input: {
+    mediaType: "movie" | "tv";
+    id: number;
+    page: number;
+    language?: string;
+  }): Promise<ReviewPage> {
+    const [response, imageBaseUrl] = await Promise.all([
+      this.requests.get<TmdbReviewPage>(
+        `/${input.mediaType}/${encodeURIComponent(input.id)}/reviews`,
+        baseQuery(input.page, input.language || this.config.language)
+      ),
+      this.getImageBaseUrl()
+    ]);
+    return normalizeReviews(input.mediaType, input.id, response, imageBaseUrl);
   }
 
   /**

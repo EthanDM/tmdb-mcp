@@ -29,6 +29,10 @@ Local, read-only TMDB MCP server for discovering movies and TV series from Codex
 - `tmdb_search_keywords`
 - `tmdb_find_by_external_id`
 - `tmdb_get_content_ratings`
+- `tmdb_search_multi`
+- `tmdb_search_collections`
+- `tmdb_get_credits`
+- `tmdb_get_reviews`
 
 The server supports title search, exact movie details, popular/top-rated/current
 lists, daily or weekly trends, advanced discovery filters, recommendations,
@@ -49,6 +53,11 @@ IDs such as IMDb or TVDB, and return regional movie certifications or TV
 content ratings. Keyword search returns stable IDs accepted by the
 `keywordIds` filter in both movie and TV discovery; `keywordMode` controls
 whether multiple IDs are combined with AND or OR semantics.
+
+Catalog tools also provide unified movie, TV, and people search; franchise
+search; paginated movie and TV reviews; and bounded cast or crew credits.
+Series and season credit requests use TMDB's aggregate view so results cover
+the complete run instead of only the newest season.
 
 It does not expose account sessions, favorites, ratings, watchlists, lists, or
 any other mutation.

@@ -189,6 +189,35 @@ async function main(): Promise<void> {
   assertNonempty(movieRatings.regions, "Movie certifications");
   assertNonempty(tvRatings.regions, "TV content ratings");
 
+  logStep("multi-search, collection search, credits, and reviews");
+  const [multi, collectionSearch, movieCredits, tvCredits, reviews] =
+    await Promise.all([
+      client.searchMulti({
+        query: "The Matrix",
+        page: 1,
+        includeAdult: false
+      }),
+      client.searchCollections({ query: "The Matrix", page: 1 }),
+      client.getCredits({
+        mediaType: "movie",
+        id: 603,
+        creditType: "all",
+        limit: 50
+      }),
+      client.getCredits({
+        mediaType: "tv",
+        id: 95396,
+        creditType: "all",
+        limit: 50
+      }),
+      client.getReviews({ mediaType: "movie", id: 603, page: 1 })
+    ]);
+  assertNonempty(multi.items, "Multi-search");
+  assertNonempty(collectionSearch.items, "Collection search");
+  assertNonempty(movieCredits.items, "Movie credits");
+  assertNonempty(tvCredits.items, "TV credits");
+  assertNonempty(reviews.items, "Movie reviews");
+
   console.log(
     `Smoke passed: movie ${details.title}; TV ${tvDetails.name}; episode ${episode.name}; collection ${collection.name}; person ${personDetails.name}; ${popular.total_results} popular movies; ${popularTv.total_results} popular TV series.`
   );

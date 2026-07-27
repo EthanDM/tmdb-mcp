@@ -296,6 +296,60 @@ export const getContentRatingsSchema = z.object({
   region: regionSchema
 });
 
+export const searchMultiSchema = z.object({
+  query: z.string().trim().min(1),
+  page: pageSchema,
+  language: languageSchema,
+  includeAdult: z.boolean().default(false)
+});
+
+export const searchCollectionsSchema = z.object({
+  query: z.string().trim().min(1),
+  page: pageSchema,
+  language: languageSchema
+});
+
+const getCreditsFields = {
+  mediaType: z.enum(["movie", "tv"]),
+  id: movieIdSchema,
+  seasonNumber: seasonNumberSchema.optional(),
+  episodeNumber: z.number().int().positive().optional(),
+  creditType: z.enum(["cast", "crew", "all"]).default("all"),
+  limit: z.number().int().min(1).max(200).default(50),
+  language: languageSchema
+};
+
+export const getCreditsInputSchema = getCreditsFields;
+
+export const getCreditsSchema = z
+  .object(getCreditsFields)
+  .superRefine((input, context) => {
+    if (
+      input.mediaType === "movie" &&
+      (input.seasonNumber !== undefined || input.episodeNumber !== undefined)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["seasonNumber"],
+        message: "Season and episode numbers apply only to TV credits."
+      });
+    }
+    if (input.episodeNumber !== undefined && input.seasonNumber === undefined) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["seasonNumber"],
+        message: "seasonNumber is required when episodeNumber is provided."
+      });
+    }
+  });
+
+export const getReviewsSchema = z.object({
+  mediaType: z.enum(["movie", "tv"]),
+  id: movieIdSchema,
+  page: pageSchema,
+  language: languageSchema
+});
+
 /**
  * Produces transport-independent handlers so validation and error behavior can
  * be tested without starting an MCP stdio process.
@@ -395,6 +449,22 @@ export function createToolHandlers(client: TmdbClient) {
     getContentRatings: (args: unknown) =>
       withParsedArgs(getContentRatingsSchema, args, (input) =>
         client.getContentRatings(input)
+      ),
+    searchMulti: (args: unknown) =>
+      withParsedArgs(searchMultiSchema, args, (input) =>
+        client.searchMulti(input)
+      ),
+    searchCollections: (args: unknown) =>
+      withParsedArgs(searchCollectionsSchema, args, (input) =>
+        client.searchCollections(input)
+      ),
+    getCredits: (args: unknown) =>
+      withParsedArgs(getCreditsSchema, args, (input) =>
+        client.getCredits(input)
+      ),
+    getReviews: (args: unknown) =>
+      withParsedArgs(getReviewsSchema, args, (input) =>
+        client.getReviews(input)
       )
   };
 }

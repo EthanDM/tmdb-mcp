@@ -319,3 +319,76 @@ export type ContentRatingsResult = {
     }>;
   }>;
 };
+
+export type CatalogSearchItem = {
+  media_type: "movie" | "tv" | "person";
+  id: number;
+  title: string;
+  date: string | null;
+  overview: string;
+  known_for_department: string | null;
+  popularity: number;
+  image_url: string | null;
+  tmdb_url: string;
+};
+
+export type CatalogSearchPage = {
+  items: CatalogSearchItem[];
+  page: number;
+  total_pages: number;
+  total_results: number;
+  next_page: number | null;
+};
+
+export type CollectionSearchPage = {
+  items: Array<{
+    id: number;
+    name: string;
+    overview: string;
+    poster_url: string | null;
+    backdrop_url: string | null;
+    tmdb_url: string;
+  }>;
+  page: number;
+  total_pages: number;
+  total_results: number;
+  next_page: number | null;
+};
+
+export type CreditsResult = {
+  media_type: "movie" | "tv";
+  id: number;
+  season_number: number | null;
+  episode_number: number | null;
+  items: Array<{
+    id: number;
+    name: string;
+    credit_type: "cast" | "crew";
+    character: string | null;
+    job: string | null;
+    department: string | null;
+    episode_count: number | null;
+    profile_url: string | null;
+  }>;
+  total_matching: number;
+  returned: number;
+};
+
+export type ReviewPage = {
+  media_type: "movie" | "tv";
+  id: number;
+  items: Array<{
+    id: string;
+    author: string;
+    rating: number | null;
+    content: string;
+    created_at: string | null;
+    updated_at: string | null;
+    url: string | null;
+    avatar_url: string | null;
+  }>;
+  page: number;
+  total_pages: number;
+  total_results: number;
+  next_page: number | null;
+};

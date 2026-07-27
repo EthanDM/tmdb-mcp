@@ -12,12 +12,14 @@ import {
   findByExternalIdSchema,
   getCollectionSchema,
   getContentRatingsSchema,
+  getCreditsInputSchema,
   getMovieSchema,
   getPersonCreditsSchema,
   getPersonSchema,
   getTvSeriesSchema,
   getTvEpisodeSchema,
   getTvSeasonSchema,
+  getReviewsSchema,
   listMovieGenresSchema,
   listMoviesSchema,
   listWatchProvidersSchema,
@@ -28,6 +30,8 @@ import {
   relatedTvSchema,
   searchMoviesSchema,
   searchKeywordsSchema,
+  searchCollectionsSchema,
+  searchMultiSchema,
   searchPeopleSchema,
   searchTvSchema,
   trendingMoviesSchema,
@@ -310,6 +314,47 @@ server.registerTool(
     inputSchema: getContentRatingsSchema.shape
   },
   handlers.getContentRatings
+);
+
+server.registerTool(
+  "tmdb_search_multi",
+  {
+    title: "Search TMDB Catalog",
+    description: "Searches movies, TV series, and people in one request.",
+    inputSchema: searchMultiSchema.shape
+  },
+  handlers.searchMulti
+);
+
+server.registerTool(
+  "tmdb_search_collections",
+  {
+    title: "Search TMDB Movie Collections",
+    description: "Searches movie franchises and collections by name.",
+    inputSchema: searchCollectionsSchema.shape
+  },
+  handlers.searchCollections
+);
+
+server.registerTool(
+  "tmdb_get_credits",
+  {
+    title: "Get TMDB Credits",
+    description:
+      "Gets bounded movie, TV series, season, or episode cast and crew credits.",
+    inputSchema: getCreditsInputSchema
+  },
+  handlers.getCredits
+);
+
+server.registerTool(
+  "tmdb_get_reviews",
+  {
+    title: "Get TMDB Reviews",
+    description: "Gets paginated user reviews for a movie or TV series.",
+    inputSchema: getReviewsSchema.shape
+  },
+  handlers.getReviews
 );
 
 await server.connect(new StdioServerTransport());

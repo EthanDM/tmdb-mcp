@@ -5,6 +5,7 @@ import {
   createToolHandlers,
   discoverMoviesSchema,
   discoverTvSchema,
+  getCreditsSchema,
   searchMoviesSchema,
   searchTvSchema
 } from "../src/tools.js";
@@ -47,6 +48,23 @@ describe("tool schemas", () => {
       firstAirDateTo: "2024-01-01"
     });
     expect(result.success).toBe(false);
+  });
+
+  it("requires TV context for season and episode credits", () => {
+    expect(
+      getCreditsSchema.safeParse({
+        mediaType: "movie",
+        id: 603,
+        seasonNumber: 1
+      }).success
+    ).toBe(false);
+    expect(
+      getCreditsSchema.safeParse({
+        mediaType: "tv",
+        id: 95396,
+        episodeNumber: 1
+      }).success
+    ).toBe(false);
   });
 
   it("returns MCP-compatible errors without invoking the client", async () => {
