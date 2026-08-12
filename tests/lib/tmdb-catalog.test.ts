@@ -118,6 +118,41 @@ describe("TmdbClient catalog workflows", () => {
     ]);
   });
 
+  it("uses aggregate credits for TV seasons", async () => {
+    const fetchMock = createRouterFetchMock({
+      "GET /3/configuration": () => configurationResponse(),
+      "GET /3/tv/95396/season/1/aggregate_credits?": () =>
+        jsonResponse({
+          cast: [
+            {
+              id: 1,
+              name: "Adam Scott",
+              roles: [{ character: "Mark Scout" }],
+              total_episode_count: 9
+            }
+          ],
+          crew: []
+        })
+    });
+    const client = new TmdbClient(config, fetchMock);
+
+    const result = await client.getCredits({
+      mediaType: "tv",
+      id: 95396,
+      seasonNumber: 1,
+      creditType: "cast",
+      limit: 50
+    });
+
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        name: "Adam Scott",
+        character: "Mark Scout",
+        episode_count: 9
+      })
+    ]);
+  });
+
   it("keeps crew visible when an all-credits result exceeds its limit", async () => {
     const fetchMock = createRouterFetchMock({
       "GET /3/configuration": () => configurationResponse(),

@@ -149,3 +149,8 @@ pnpm smoke
 ```
 
 `pnpm smoke` makes live read-only requests and requires a configured token.
+
+## Contributing and license
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the local development workflow.
+This project is licensed under the [MIT License](LICENSE).
